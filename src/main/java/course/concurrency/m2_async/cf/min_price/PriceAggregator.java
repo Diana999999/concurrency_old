@@ -33,22 +33,16 @@ public class PriceAggregator {
 
         final CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[shopIds.size()]));
 
-
         try {
             allFutures.get(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            System.out.println("timeout");
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            // do nothing
         }
 
-        final var priceList = futures.stream()
+        return futures.stream()
                 .filter(future -> future.isDone() && !future.isCompletedExceptionally())
-                .map(CompletableFuture::join)
-                .collect(Collectors.toList());
-
-        return priceList
-                .stream()
+                .map(cf -> cf.exceptionally(ex -> null).join())
                 .filter(Objects::nonNull)
-                .filter(price -> price.compareTo(0.0) != 0) // some were unboxed from null to 0.0
                 .min(Double::compareTo)
                 .orElse(Double.NaN);
     }
