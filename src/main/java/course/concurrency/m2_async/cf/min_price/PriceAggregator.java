@@ -34,13 +34,9 @@ public class PriceAggregator {
 
         final CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[shopIds.size()]));
 
-        allFutures.completeOnTimeout(null, TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-
-//        try {
-//            allFutures.get(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-//        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-//            // do nothing
-//        }
+        allFutures
+                .completeOnTimeout(null, TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+                .join();
 
         return futures.stream()
                 .filter(future -> future.isDone() && !future.isCompletedExceptionally())
