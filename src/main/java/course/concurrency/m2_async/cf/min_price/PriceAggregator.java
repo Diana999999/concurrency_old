@@ -29,19 +29,22 @@ public class PriceAggregator {
         final List<CompletableFuture<Double>> futures = shopIds.stream()
                 .map(shopId -> CompletableFuture
                         .supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), executor)
+                        .exceptionally(ex -> null) // при выбросе исключения берем значение null
                 ).collect(Collectors.toList());
 
         final CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[shopIds.size()]));
 
-        try {
-            allFutures.get(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            // do nothing
-        }
+        allFutures.completeOnTimeout(null, TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+
+//        try {
+//            allFutures.get(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+//        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+//            // do nothing
+//        }
 
         return futures.stream()
                 .filter(future -> future.isDone() && !future.isCompletedExceptionally())
-                .map(cf -> cf.exceptionally(ex -> null).join())
+                .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
                 .min(Double::compareTo)
                 .orElse(Double.NaN);
