@@ -3,7 +3,6 @@ package course.concurrency.m2_async.min_price;
 import course.concurrency.m2_async.cf.min_price.PriceAggregator;
 import course.concurrency.m2_async.cf.min_price.PriceRetriever;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +24,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@Disabled
 public class PriceAggregatorTests {
 
     PriceAggregator priceAggregator;
