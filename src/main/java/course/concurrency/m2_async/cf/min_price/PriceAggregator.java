@@ -39,7 +39,7 @@ public class PriceAggregator {
                 .join();
 
         return futures.stream()
-                .filter(future -> future.isDone() && !future.isCompletedExceptionally())
+                .filter(CompletableFuture::isDone)
                 .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
                 .min(Double::compareTo)
