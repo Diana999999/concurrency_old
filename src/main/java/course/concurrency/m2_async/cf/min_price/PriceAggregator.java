@@ -1,10 +1,6 @@
 package course.concurrency.m2_async.cf.min_price;
 
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -15,6 +11,7 @@ import static java.lang.Double.NaN;
 public class PriceAggregator {
 
     private PriceRetriever priceRetriever = new PriceRetriever();
+    private static final long PRICE_RETRIEVE_TIMEOUT = 2_900L;
 
     public void setPriceRetriever(PriceRetriever priceRetriever) {
         this.priceRetriever = priceRetriever;
@@ -38,31 +35,19 @@ public class PriceAggregator {
         *  Для того чтобы все тесты успешно завершились дефолтный forkjoinpool был скорерктирован.        *
         * */
 
-
-        Executor executor = executor();
-
         Executor forkJoinPool = forkJoinPool();
 
-        List<CompletableFuture<Double>> min = shopIds.stream()
+        List<CompletableFuture<Double>> minShopPrices = shopIds.stream()
                 .map(shopId -> CompletableFuture
-                        .supplyAsync(() ->
-                        {
-                            System.out.println("ThreadName = " + Thread.currentThread().getName());
-                            return priceRetriever.getPrice(itemId, shopId);
-                        }, forkJoinPool)
-                        .handle((result, exception) -> result != null ? result : NaN)
-                        .completeOnTimeout(NaN, 2900l, TimeUnit.MILLISECONDS))
+                        .supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), forkJoinPool)
+                        .exceptionally(e -> Double.NaN)
+                        .completeOnTimeout(NaN, PRICE_RETRIEVE_TIMEOUT, TimeUnit.MILLISECONDS))
                 .collect(Collectors.toList());
 
-        List<Double> prices = min.stream()
+        return minShopPrices.stream()
                 .map(CompletableFuture::join)
-                .collect(Collectors.toList());
-
-        System.out.println(prices);
-
-        return prices.stream()
-                .filter(x-> !x.isNaN())
-                .min(Comparator.comparing(Double::valueOf))
+                .filter(price-> !price.isNaN())
+                .min(Double::compareTo)
                 .orElse(NaN);
     }
 
@@ -79,15 +64,5 @@ public class PriceAggregator {
                 null,
                 60L,
                 TimeUnit.SECONDS);
-    }
-
-    private TaskExecutor executor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(50);
-        executor.setMaxPoolSize(60);
-        executor.setQueueCapacity(20);
-        executor.setThreadNamePrefix("Custom executor");
-        executor.initialize();
-        return executor;
     }
 }
