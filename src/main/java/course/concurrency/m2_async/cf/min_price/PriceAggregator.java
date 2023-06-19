@@ -21,8 +21,6 @@ public class PriceAggregator {
         this.priceRetriever = priceRetriever;
     }
 
-    ExecutorService executorService = Executors.newCachedThreadPool();
-
     private Collection<Long> shopIds = Set.of(10l, 45l, 66l, 345l, 234l, 333l, 67l, 123l, 768l);
 
     public void setShops(Collection<Long> shopIds) {
