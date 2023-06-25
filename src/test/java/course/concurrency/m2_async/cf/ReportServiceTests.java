@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ReportServiceTests {
 
-    private ReportServiceExecutors reportService = new ReportServiceExecutors();
-//    private ReportServiceCF reportService = new ReportServiceCF();
+//    private ReportServiceExecutors reportService = new ReportServiceExecutors();
+    private ReportServiceCF reportService = new ReportServiceCF();
 
     @Test
     public void testMultipleTasks() throws InterruptedException {
