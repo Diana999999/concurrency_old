@@ -1,21 +1,34 @@
 package course.concurrency.exams.auction;
 
+import java.util.Objects;
+
 public class AuctionPessimistic implements Auction {
 
-    private Notifier notifier;
+    private final Notifier notifier;
 
     public AuctionPessimistic(Notifier notifier) {
         this.notifier = notifier;
     }
 
-    private Bid latestBid;
+    private volatile Bid latestBid;
 
     public boolean propose(Bid bid) {
-        if (bid.getPrice() > latestBid.getPrice()) {
+        Objects.requireNonNull(bid);
+
+        boolean bidIsModified = false;
+
+        synchronized(this) {
+            if (latestBid == null || bid.getPrice() > latestBid.getPrice()) {
+                latestBid = bid;
+                bidIsModified = true;
+            }
+        }
+
+        if (bidIsModified) {
             notifier.sendOutdatedMessage(latestBid);
-            latestBid = bid;
             return true;
         }
+
         return false;
     }
 
