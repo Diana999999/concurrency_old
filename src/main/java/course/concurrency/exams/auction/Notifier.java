@@ -1,9 +1,11 @@
 package course.concurrency.exams.auction;
 
+import java.util.concurrent.CompletableFuture;
+
 public class Notifier {
 
     public void sendOutdatedMessage(Bid bid) {
-        imitateSending();
+        CompletableFuture.runAsync(this::imitateSending);
     }
 
     private void imitateSending() {
