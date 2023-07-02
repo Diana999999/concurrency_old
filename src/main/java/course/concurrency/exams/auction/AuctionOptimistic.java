@@ -25,16 +25,12 @@ public class AuctionOptimistic implements Auction {
             if (currentLatest == null || bid.getPrice() > currentLatest.getPrice()) {
                 newLatest = bid;
             } else {
-                newLatest = currentLatest;
+                return false;
             }
         } while (!latestBid.compareAndSet(currentLatest, newLatest));
 
-        if (bid.equals(newLatest)) {
-            notifier.sendOutdatedMessage(currentLatest);
-            return true;
-        }
-
-        return false;
+        notifier.sendOutdatedMessage(currentLatest);
+        return true;
     }
 
     public Bid getLatestBid() {
