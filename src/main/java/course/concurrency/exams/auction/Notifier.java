@@ -1,11 +1,10 @@
 package course.concurrency.exams.auction;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class Notifier {
 
-    private final Executor executor = Executors.newFixedThreadPool(16);
+    private final Executor executor = ForkJoinPool.commonPool();
 
     public void sendOutdatedMessage(Bid bid) {
         executor.execute(this::imitateSending);
