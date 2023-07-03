@@ -10,7 +10,7 @@ public class AuctionPessimistic extends AbstractAuction {
         this.notifier = notifier;
     }
 
-    private volatile Bid latestBid;
+    private volatile Bid latestBid = START_BID;
 
     @Override
     public boolean propose(Bid bid) {

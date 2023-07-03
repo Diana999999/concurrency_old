@@ -11,16 +11,16 @@ public class AuctionOptimistic extends AbstractAuction {
         this.notifier = notifier;
     }
 
-    private final AtomicReference<Bid> latestBid = new AtomicReference<>(null);
+    private final AtomicReference<Bid> latestBid = new AtomicReference<>(START_BID);
 
     @Override
     public boolean propose(Bid bid) {
         Objects.requireNonNull(bid);
 
-        Bid currentLatest = latestBid.get();
         Bid newLatest;
+        Bid currentLatest;
 
-        if (isChallengerBid(bid, currentLatest)) {
+        if (isChallengerBid(bid, latestBid.get())) {
             do {
                 currentLatest = latestBid.get();
 
