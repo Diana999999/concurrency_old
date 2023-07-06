@@ -1,29 +1,49 @@
 package course.concurrency.exams.auction;
 
-public class AuctionStoppablePessimistic implements AuctionStoppable {
+import java.util.Objects;
 
-    private Notifier notifier;
+public class AuctionStoppablePessimistic extends AbstractAuctionStoppable {
+
+    private final Notifier notifier;
 
     public AuctionStoppablePessimistic(Notifier notifier) {
         this.notifier = notifier;
     }
 
-    private Bid latestBid;
+    private volatile Bid latestBid = START_BID;
+    private volatile boolean isStopped = false;
 
+    @Override
     public boolean propose(Bid bid) {
-        if (bid.getPrice() > latestBid.getPrice()) {
-            notifier.sendOutdatedMessage(latestBid);
-            latestBid = bid;
-            return true;
+        Objects.requireNonNull(bid);
+
+        if (!isChallengerBid(bid, latestBid) || isStopped) return false;
+
+        synchronized (this) {
+            if (isStopped) return false;
+
+            if (isChallengerBid(bid, latestBid)) {
+                notifier.sendOutdatedMessage(latestBid);
+                latestBid = bid;
+                return true;
+            }
+
+            return false;
         }
-        return false;
     }
 
+    @Override
     public Bid getLatestBid() {
         return latestBid;
     }
 
+    @Override
     public Bid stopAuction() {
+        synchronized (this) {
+            isStopped = true;
+        }
+
         return latestBid;
     }
+
 }
