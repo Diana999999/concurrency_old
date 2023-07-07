@@ -35,6 +35,8 @@ public class AuctionStoppableOptimistic extends AbstractAuctionStoppable {
     public Bid stopAuction() {
         Bid currentLatest;
 
+        if (latestBid.isMarked()) return latestBid.getReference();
+
         do {
             currentLatest = latestBid.getReference();
         } while (!latestBid.compareAndSet(currentLatest, currentLatest, false, true));
