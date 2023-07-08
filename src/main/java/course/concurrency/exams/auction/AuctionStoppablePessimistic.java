@@ -38,7 +38,7 @@ public class AuctionStoppablePessimistic extends AbstractAuctionStoppable {
     }
 
     @Override
-    public Bid stopAuction() {
+    public synchronized Bid stopAuction() {
         isStopped = true;
         return latestBid;
     }
