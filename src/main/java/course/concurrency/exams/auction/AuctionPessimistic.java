@@ -22,7 +22,7 @@ public class AuctionPessimistic implements Auction {
         return false;
     }
 
-    public synchronized Bid getLatestBid() {
+    public Bid getLatestBid() {
         synchronized (lockObj) {
             return latestBid;
         }
