@@ -1,29 +1,47 @@
 package course.concurrency.exams.auction;
 
-public class AuctionStoppableOptimistic implements AuctionStoppable {
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicMarkableReference;
 
-    private Notifier notifier;
+public class AuctionStoppableOptimistic extends AbstractAuctionStoppable {
+
+    private final Notifier notifier;
 
     public AuctionStoppableOptimistic(Notifier notifier) {
         this.notifier = notifier;
     }
 
-    private Bid latestBid;
+    private final AtomicMarkableReference<Bid> latestBid = new AtomicMarkableReference<>(START_BID, false);
 
     public boolean propose(Bid bid) {
-        if (bid.getPrice() > latestBid.getPrice()) {
-            notifier.sendOutdatedMessage(latestBid);
-            latestBid = bid;
-            return true;
-        }
-        return false;
+        Objects.requireNonNull(bid);
+
+        Bid currentLatest;
+
+        do {
+            currentLatest = latestBid.getReference();
+
+            if (latestBid.isMarked() || !isChallengerBid(bid, currentLatest) ) return false;
+        } while (!latestBid.compareAndSet(currentLatest, bid, false, false));
+
+        notifier.sendOutdatedMessage(currentLatest);
+        return true;
     }
 
     public Bid getLatestBid() {
-        return latestBid;
+        return latestBid.getReference();
     }
 
     public Bid stopAuction() {
-        return latestBid;
+        Bid currentLatest;
+
+        do {
+            boolean[] markHolder = new boolean[1];
+            currentLatest = latestBid.get(markHolder);
+
+            if (markHolder[0]) return currentLatest;
+        } while (!latestBid.compareAndSet(currentLatest, currentLatest, false, true));
+
+        return currentLatest;
     }
 }
