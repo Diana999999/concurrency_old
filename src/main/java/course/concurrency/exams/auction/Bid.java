@@ -15,6 +15,10 @@ public class Bid {
         return id;
     }
 
+    public static Bid defaultBid() {
+        return new Bid(-1L, -1L, -1L);
+    }
+
     public Long getParticipantId() {
         return participantId;
     }
