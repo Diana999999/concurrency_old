@@ -17,7 +17,7 @@ public final class Order {
         this.id = id;
         this.items = items;
         this.paymentInfo = paymentInfo;
-        this.isPacked = false;
+        this.isPacked = isPacked;
         this.status = status;
     }
 

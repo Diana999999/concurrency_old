@@ -22,25 +22,25 @@ public class OrderService {
 
     public void updatePaymentInfo(long orderId, PaymentInfo paymentInfo) {
         currentOrders.computeIfPresent(orderId, (id, existingOrder) -> {
-            var order = existingOrder;
+            var order = existingOrder.withPaymentInfo(paymentInfo);
 
-            if (existingOrder.checkStatus()) {
+            if (order.checkStatus()) {
                 order = deliver(order);
             }
 
-            return order.withPaymentInfo(paymentInfo);
+            return order;
         });
     }
 
     public void setPacked(long orderId) {
         currentOrders.computeIfPresent(orderId, (id, existingOrder) -> {
-            var order = existingOrder;
+            var order = existingOrder.withPacked(true);
 
-            if (existingOrder.checkStatus()) {
+            if (order.checkStatus()) {
                 order = deliver(order);
             }
 
-            return order.withPacked(true);
+            return order;
         });
     }
 
