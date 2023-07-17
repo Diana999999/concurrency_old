@@ -1,5 +1,6 @@
 package course.concurrency.m3_shared.immutable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -15,14 +16,14 @@ public final class Order {
 
     private Order(Long id, List<Item> items, PaymentInfo paymentInfo, boolean isPacked, Status status) {
         this.id = id;
-        this.items = items;
+        this.items = new ArrayList<>(items); // OK if Item is immutable
         this.paymentInfo = paymentInfo;
         this.isPacked = isPacked;
         this.status = status;
     }
 
     public synchronized boolean checkStatus() {
-        if (items != null && !items.isEmpty() && paymentInfo != null && isPacked) {
+        if (!items.isEmpty() && paymentInfo != null && isPacked) {
             return true;
         }
         return false;
@@ -40,7 +41,7 @@ public final class Order {
         return paymentInfo; // if PaymentInfo is not immutable, a copy of this.paymentInfo should be returned
     }
 
-    public Order withPaymentInfo(PaymentInfo paymentInfo) {
+    public Order paid(PaymentInfo paymentInfo) {
         return new Order(id, items, paymentInfo, isPacked, status);
     }
 
@@ -48,16 +49,16 @@ public final class Order {
         return isPacked;
     }
 
-    public Order withPacked(boolean packed) {
-        return new Order(id, items, paymentInfo, packed, Status.IN_PROGRESS);
+    public Order packed() {
+        return new Order(id, items, paymentInfo, true, Status.IN_PROGRESS);
     }
 
     public Status getStatus() {
         return status;
     }
 
-    public Order withStatus(Status status) {
-        return new Order(id, items, paymentInfo, isPacked, status);
+    public Order delivered() {
+        return new Order(id, items, paymentInfo, isPacked, Status.DELIVERED);
     }
 
     public static Order newOrder(Long id, List<Item> items) {

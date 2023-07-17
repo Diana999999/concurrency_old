@@ -21,32 +21,24 @@ public class OrderService {
     }
 
     public void updatePaymentInfo(long orderId, PaymentInfo paymentInfo) {
-        currentOrders.computeIfPresent(orderId, (id, existingOrder) -> {
-            var order = existingOrder.withPaymentInfo(paymentInfo);
+        final Order order =
+            currentOrders.computeIfPresent(orderId, (id, existingOrder) -> existingOrder.paid(paymentInfo));
 
-            if (order.checkStatus()) {
-                order = deliver(order);
-            }
-
-            return order;
-        });
+        if (order != null) deliver(order);
     }
 
     public void setPacked(long orderId) {
-        currentOrders.computeIfPresent(orderId, (id, existingOrder) -> {
-            var order = existingOrder.withPacked(true);
+        final Order order = currentOrders.computeIfPresent(orderId, (id, existingOrder) -> existingOrder.packed());
 
-            if (order.checkStatus()) {
-                order = deliver(order);
-            }
-
-            return order;
-        });
+        if (order != null) deliver(order);
     }
 
-    private Order deliver(Order order) {
+    private void deliver(Order order) {
         /* ... some async task, better submitted by some executor */
-        return order.withStatus(Order.Status.DELIVERED);
+        currentOrders.computeIfPresent(
+            order.getId(),
+            (id, existingOrder) -> order.checkStatus() ? existingOrder.delivered() : existingOrder
+        );
     }
 
     public boolean isDelivered(long orderId) {
