@@ -24,20 +24,20 @@ public class OrderService {
         final Order order =
             currentOrders.computeIfPresent(orderId, (id, existingOrder) -> existingOrder.paid(paymentInfo));
 
-        if (order != null) deliver(order);
+        if (order != null && order.checkStatus()) deliver(order);
     }
 
     public void setPacked(long orderId) {
         final Order order = currentOrders.computeIfPresent(orderId, (id, existingOrder) -> existingOrder.packed());
 
-        if (order != null) deliver(order);
+        if (order != null && order.checkStatus()) deliver(order);
     }
 
     private void deliver(Order order) {
         /* ... some async task, better submitted by some executor */
         currentOrders.computeIfPresent(
             order.getId(),
-            (id, existingOrder) -> order.checkStatus() ? existingOrder.delivered() : existingOrder
+            (id, existingOrder) -> existingOrder.delivered()
         );
     }
 
