@@ -1,10 +1,8 @@
 package course.concurrency.m3_shared.collections;
 
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
@@ -18,7 +16,9 @@ public class RestaurantService {
         put("C", new Restaurant("C"));
     }};
 
-    private final Queue<String> stat = new LinkedBlockingQueue<>();
+    private final Map<String, Long> stat = new ConcurrentHashMap<>() {{
+        restaurantMap.keySet().forEach(name -> put(name, 0L));
+    }};
 
     public Restaurant getByName(String restaurantName) {
         addToStat(restaurantName);
@@ -26,14 +26,12 @@ public class RestaurantService {
     }
 
     public void addToStat(String restaurantName) {
-        stat.add(restaurantName);
+        stat.computeIfPresent(restaurantName, (name, counter) -> ++counter);
     }
 
     public Set<String> printStat() {
-        return stat.stream()
-                .collect(groupingBy(identity()))
-                .entrySet().stream()
-                .map(entry -> entry.getKey() + " - " + entry.getValue().size())
+        return stat.entrySet().stream()
+                .map(entry -> entry.getKey() + " - " + entry.getValue())
                 .collect(toSet());
     }
 }
