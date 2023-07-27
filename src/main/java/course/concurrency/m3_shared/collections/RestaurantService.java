@@ -4,8 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.groupingBy;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 
 public class RestaurantService {
