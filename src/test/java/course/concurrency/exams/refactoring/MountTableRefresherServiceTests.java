@@ -4,7 +4,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 import java.util.List;
 
@@ -38,15 +41,18 @@ public class MountTableRefresherServiceTests {
 
     @Test
     @DisplayName("All tasks are completed successfully")
-    public void allDone() {
+    public void allDone() throws Exception {
         // given
         MountTableRefresherService mockedService = Mockito.spy(service);
         List<String> addresses = List.of("123", "local6", "789", "local");
 
+        List<Others.RouterState> states = addresses.stream()
+            .map(Others.RouterState::new)
+            .collect(toList());
+
+        when(mockedService.getManager(anyString())).thenReturn(manager);
         when(manager.refresh()).thenReturn(true);
 
-        List<Others.RouterState> states = addresses.stream()
-                .map(a -> new Others.RouterState(a)).collect(toList());
         when(routerStore.getCachedRecords()).thenReturn(states);
         // smth more
 
@@ -61,25 +67,120 @@ public class MountTableRefresherServiceTests {
     @Test
     @DisplayName("All tasks failed")
     public void noSuccessfulTasks() {
+        // given
+        MountTableRefresherService mockedService = Mockito.spy(service);
+        List<String> addresses = List.of("123", "local6", "789", "local");
 
+        List<Others.RouterState> states = addresses.stream()
+            .map(Others.RouterState::new)
+            .collect(toList());
+
+        when(mockedService.getManager(anyString())).thenReturn(manager);
+        when(manager.refresh()).thenReturn(false);
+
+        when(routerStore.getCachedRecords()).thenReturn(states);
+        // smth more
+
+        // when
+        mockedService.refresh();
+
+        // then
+        verify(mockedService).log("Mount table entries cache refresh successCount=0,failureCount=4");
+        verify(routerClientsCache, times(4)).invalidate(anyString());
     }
 
     @Test
     @DisplayName("Some tasks failed")
     public void halfSuccessedTasks() {
+        // given
+        MountTableRefresherService mockedService = Mockito.spy(service);
+        List<String> addresses = List.of("123", "local6", "789", "local");
 
+        List<Others.RouterState> states = addresses.stream()
+            .map(Others.RouterState::new)
+            .collect(toList());
+
+        var failedManager = mock(Others.MountTableManager.class);
+        var firstAddress = states.get(0).getAdminAddress();
+        when(mockedService.getManager(firstAddress)).thenReturn(failedManager);
+        when(failedManager.refresh()).thenReturn(false);
+
+        when(mockedService.getManager(AdditionalMatchers.not(ArgumentMatchers.eq(firstAddress)))).thenReturn(manager);
+        when(manager.refresh()).thenReturn(true);
+
+        when(routerStore.getCachedRecords()).thenReturn(states);
+        // smth more
+
+        // when
+        mockedService.refresh();
+
+        // then
+        verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
+        verify(routerClientsCache, times(1)).invalidate(anyString());
     }
 
     @Test
     @DisplayName("One task completed with exception")
     public void exceptionInOneTask() {
+        // given
+        MountTableRefresherService mockedService = Mockito.spy(service);
+        List<String> addresses = List.of("123", "local6", "789", "local");
 
+        List<Others.RouterState> states = addresses.stream()
+            .map(Others.RouterState::new)
+            .collect(toList());
+
+        var failedManager = mock(Others.MountTableManager.class);
+        var firstAddress = states.get(0).getAdminAddress();
+        when(mockedService.getManager(firstAddress)).thenReturn(failedManager);
+        when(failedManager.refresh()).thenThrow(new RuntimeException());
+
+        when(mockedService.getManager(AdditionalMatchers.not(ArgumentMatchers.eq(firstAddress)))).thenReturn(manager);
+        when(manager.refresh()).thenReturn(true);
+
+        when(routerStore.getCachedRecords()).thenReturn(states);
+        // smth more
+
+        // when
+        mockedService.refresh();
+
+        // then
+        verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=0");
+        verify(routerClientsCache, never()).invalidate(anyString());
     }
 
     @Test
     @DisplayName("One task exceeds timeout")
     public void oneTaskExceedTimeout() {
+        // given
+        MountTableRefresherService mockedService = Mockito.spy(service);
+        List<String> addresses = List.of("123", "local6", "789", "local");
 
+        List<Others.RouterState> states = addresses.stream()
+            .map(Others.RouterState::new)
+            .collect(toList());
+
+        var failedManager = mock(Others.MountTableManager.class);
+        var firstAddress = states.get(0).getAdminAddress();
+        when(mockedService.getManager(firstAddress)).thenReturn(failedManager);
+        when(failedManager.refresh()).thenAnswer((Answer<Boolean>) invocation -> {
+            Thread.sleep(2000);
+            return true;
+        });
+
+        when(mockedService.getManager(AdditionalMatchers.not(ArgumentMatchers.eq(firstAddress)))).thenReturn(manager);
+        when(manager.refresh()).thenReturn(true);
+
+        when(routerStore.getCachedRecords()).thenReturn(states);
+        // smth more
+
+        // when
+        mockedService.refresh();
+
+        // then
+        verify(mockedService).log("Not all router admins updated their cache");
+        verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=0");
+        verify(routerClientsCache, never()).invalidate(anyString());
     }
 
 }
