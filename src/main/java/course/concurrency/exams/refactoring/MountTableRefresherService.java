@@ -96,9 +96,15 @@ public class MountTableRefresherService {
             .filter(Objects::nonNull)
             .toArray(CompletableFuture[]::new);
 
-        CompletableFuture.allOf(tasks)
-            .completeOnTimeout(null, cacheUpdateTimeout, TimeUnit.MILLISECONDS)
-            .join();
+        try {
+            CompletableFuture.allOf(tasks)
+                .completeOnTimeout(null, cacheUpdateTimeout, TimeUnit.MILLISECONDS)
+                .get();
+        } catch (InterruptedException e) {
+            log("Mount table cache refresher was interrupted.");
+        } catch (ExecutionException e) {
+            log("Mount table cache refresher was completed with error");
+        }
 
         if (results.size() != tasks.length) {
             log("Not all router admins updated their cache");
