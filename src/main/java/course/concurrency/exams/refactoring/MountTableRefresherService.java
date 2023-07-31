@@ -1,9 +1,9 @@
 package course.concurrency.exams.refactoring;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 
 public class MountTableRefresherService {
@@ -73,15 +73,16 @@ public class MountTableRefresherService {
      * Refresh mount table cache of this router as well as all other routers.
      */
     public void refresh() {
-        List<Others.RouterState> cachedRecords = routerStore.getCachedRecords();
-
-        ConcurrentHashMap<String, Boolean> results = new ConcurrentHashMap(cachedRecords.size());
-
-        var tasks = cachedRecords
+        List<String> addresses = routerStore.getCachedRecords()
             .stream()
-            .map(routerState -> {
-                String adminAddress = routerState.getAdminAddress();
+            .map(Others.RouterState::getAdminAddress)
+            .collect(Collectors.toList());
 
+        ConcurrentHashMap<String, Boolean> results = new ConcurrentHashMap<>(addresses.size());
+
+        var tasks = addresses
+            .stream()
+            .map(adminAddress -> {
                 // this router has not enabled router admin.
                 if (adminAddress == null || adminAddress.length() == 0) return null;
 
@@ -98,35 +99,38 @@ public class MountTableRefresherService {
 
         try {
             CompletableFuture.allOf(tasks)
-                .completeOnTimeout(null, cacheUpdateTimeout, TimeUnit.MILLISECONDS)
-                .get();
+                .get(cacheUpdateTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             log("Mount table cache refresher was interrupted.");
         } catch (ExecutionException e) {
             log("Mount table cache refresher was completed with error");
+        } catch (TimeoutException e) {
+            log("Mount table cache refresher was not completed in time");
         }
 
         if (results.size() != tasks.length) {
             log("Not all router admins updated their cache");
         }
 
-        logResults(results);
+        logResults(addresses, results);
     }
 
     public Others.MountTableManager getManager(String managerAddress) {
         return new Others.MountTableManager(managerAddress);
     }
 
-    private void logResults(ConcurrentHashMap<String, Boolean> results) {
+    private void logResults(List<String> addresses, ConcurrentHashMap<String, Boolean> results) {
         int successCount = 0;
         int failureCount = 0;
 
-        for (Map.Entry<String, Boolean> result : results.entrySet()) {
-            if (result.getValue()) {
-                successCount++;
-            } else {
+        for (String address : addresses) {
+            Boolean result = results.get(address);
+
+            if (result == null || !result) {
                 failureCount++;
-                removeFromCache(result.getKey());
+                removeFromCache(address);
+            } else {
+                successCount++;
             }
         }
 
@@ -151,7 +155,7 @@ public class MountTableRefresherService {
         this.cacheUpdateTimeout = cacheUpdateTimeout;
     }
 
-    public void setRouterClientsCache(Others.LoadingCache cache) {
+    public void setRouterClientsCache(Others.LoadingCache<String, Others.RouterClient> cache) {
         this.routerClientsCache = cache;
     }
 
