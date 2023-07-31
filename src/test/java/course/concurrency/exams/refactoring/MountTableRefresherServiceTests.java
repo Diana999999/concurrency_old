@@ -183,4 +183,30 @@ public class MountTableRefresherServiceTests {
         verify(routerClientsCache, times(1)).invalidate(anyString());
     }
 
+    @Test
+    @DisplayName("Refresh was interrupted")
+    public void refreshInterrupted() throws InterruptedException {
+        MountTableRefresherService mockedService = Mockito.spy(service);
+        List<String> addresses = List.of("123", "local6", "789", "local");
+
+
+        List<Others.RouterState> states = addresses.stream()
+            .map(Others.RouterState::new)
+            .collect(toList());
+
+        when(mockedService.getManager(anyString())).thenReturn(manager);
+
+        when(routerStore.getCachedRecords()).thenReturn(states);
+
+        Thread refreshThread = new Thread(mockedService::refresh);
+
+        refreshThread.start();
+        refreshThread.interrupt();
+
+        Thread.sleep(1000);
+
+        verify(mockedService).log("Mount table cache refresher was interrupted.");
+        verify(mockedService).log("Mount table entries cache refresh successCount=0,failureCount=4");
+    }
+
 }
