@@ -92,9 +92,15 @@ public class MountTableRefresherService {
                 Others.MountTableManager manager = getManager(managerAddress);
 
                 return CompletableFuture.runAsync(
-                    () -> results.put(adminAddress, manager.refresh()),
+                    () -> {
+                        try {
+                            results.put(adminAddress, manager.refresh());
+                        } catch (Exception e) {
+                            // do nothing
+                        }
+                    },
                     refreshExecutor
-                ).exceptionally(throwable -> null);
+                );
             })
             .filter(Objects::nonNull)
             .toArray(CompletableFuture[]::new);
