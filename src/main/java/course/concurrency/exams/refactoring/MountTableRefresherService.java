@@ -1,8 +1,10 @@
 package course.concurrency.exams.refactoring;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -100,16 +102,16 @@ public class MountTableRefresherService {
         try {
             CompletableFuture.allOf(tasks)
                 .get(cacheUpdateTimeout, TimeUnit.MILLISECONDS);
+
+            if (Arrays.stream(tasks).anyMatch(Predicate.not(CompletableFuture::isDone))) {
+                log("Not all router admins updated their cache");
+            }
         } catch (InterruptedException e) {
             log("Mount table cache refresher was interrupted.");
         } catch (ExecutionException e) {
             log("Mount table cache refresher was completed with error");
         } catch (TimeoutException e) {
             log("Mount table cache refresher was not completed in time");
-        }
-
-        if (results.size() != tasks.length) {
-            log("Not all router admins updated their cache");
         }
 
         logResults(addresses, results);

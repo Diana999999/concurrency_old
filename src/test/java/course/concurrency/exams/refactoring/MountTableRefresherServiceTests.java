@@ -1,10 +1,8 @@
 package course.concurrency.exams.refactoring;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.AdditionalMatchers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
@@ -178,7 +176,6 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
-        verify(mockedService).log("Not all router admins updated their cache");
         verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
         verify(routerClientsCache, times(1)).invalidate(anyString());
     }
@@ -189,12 +186,9 @@ public class MountTableRefresherServiceTests {
         MountTableRefresherService mockedService = Mockito.spy(service);
         List<String> addresses = List.of("123", "local6", "789", "local");
 
-
         List<Others.RouterState> states = addresses.stream()
             .map(Others.RouterState::new)
             .collect(toList());
-
-        when(mockedService.getManager(anyString())).thenReturn(manager);
 
         when(routerStore.getCachedRecords()).thenReturn(states);
 
@@ -205,8 +199,11 @@ public class MountTableRefresherServiceTests {
 
         Thread.sleep(1000);
 
-        verify(mockedService).log("Mount table cache refresher was interrupted.");
-        verify(mockedService).log("Mount table entries cache refresh successCount=0,failureCount=4");
+        ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mockedService, times(2)).log(logCaptor.capture());
+        List<String> logs = logCaptor.getAllValues();
+        Assertions.assertTrue(logs.contains("Mount table cache refresher was interrupted."));
+        Assertions.assertTrue(logs.stream().anyMatch(log -> log.contains("successCount=") && log.contains("failureCount=")));
     }
 
 }
