@@ -99,19 +99,11 @@ public class MountTableRefresherService {
             .filter(Objects::nonNull)
             .toArray(CompletableFuture[]::new);
 
-        try {
-            CompletableFuture.allOf(tasks)
-                .get(cacheUpdateTimeout, TimeUnit.MILLISECONDS);
+        CompletableFuture.allOf(tasks)
+            .completeOnTimeout(null, cacheUpdateTimeout, TimeUnit.MILLISECONDS);
 
-            if (Arrays.stream(tasks).anyMatch(Predicate.not(CompletableFuture::isDone))) {
-                log("Not all router admins updated their cache");
-            }
-        } catch (InterruptedException e) {
-            log("Mount table cache refresher was interrupted.");
-        } catch (ExecutionException e) {
-            log("Mount table cache refresher was completed with error");
-        } catch (TimeoutException e) {
-            log("Mount table cache refresher was not completed in time");
+        if (Arrays.stream(tasks).anyMatch(Predicate.not(CompletableFuture::isDone))) {
+            log("Not all router admins updated their cache");
         }
 
         logResults(addresses, results);
