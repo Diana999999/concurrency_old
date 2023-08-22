@@ -16,7 +16,7 @@ public class AuctionOptimistic implements Auction {
         Bid latest;
         do {
             latest = latestBidRef.get();
-            if (bid.getPrice() < latest.getPrice()) {
+            if (bid.getPrice() <= latest.getPrice()) {
                 return false;
             }
         } while (!latestBidRef.compareAndSet(latest, bid));
