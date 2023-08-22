@@ -26,10 +26,8 @@ public class RestaurantService {
     }
 
     public void addToStat(String restaurantName) {
-        stat.computeIfPresent(restaurantName, (s, longAdder) -> {
-            longAdder.increment();
-            return longAdder;
-        });
+        LongAdder longAdder = stat.get(restaurantName);
+        longAdder.increment();
     }
 
     public Set<String> printStat() {
