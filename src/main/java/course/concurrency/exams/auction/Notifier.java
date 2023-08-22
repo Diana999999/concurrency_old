@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 public class Notifier {
 
     private final ExecutorService executorService =
-            new ThreadPoolExecutor(50, 100, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+            new ThreadPoolExecutor(50,100,0,TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 
     public void sendOutdatedMessage(Bid bid) {
         imitateSending();
