@@ -4,9 +4,21 @@ import java.util.stream.IntStream;
 
 public class LoadGenerator {
 
-    public static void work() {
-        sleep();
-//        compute();
+    private final boolean isSleep;
+
+    /**
+     * @param isSleep - if 0 - then use sleep, otherwise use compute
+     */
+    public LoadGenerator(boolean isSleep) {
+        this.isSleep = isSleep;
+    }
+
+    public void work() {
+        if (isSleep) {
+            sleep();
+        } else {
+            compute();
+        }
     }
 
     private static void sleep() {

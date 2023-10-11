@@ -6,26 +6,31 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class ReportServiceExecutors {
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor;
 
-    private LoadGenerator loadGenerator = new LoadGenerator();
+    private final LoadGenerator loadGenerator;
+
+    public ReportServiceExecutors(ExecutorService executor, LoadGenerator loadGenerator) {
+        this.executor = executor;
+        this.loadGenerator = loadGenerator;
+    }
 
     public Others.Report getReport() {
         Future<Collection<Others.Item>> iFuture =
-                executor.submit(() -> getItems());
+                executor.submit(this::getItems);
         Future<Collection<Others.Customer>> customersFuture =
-                executor.submit(() -> getActiveCustomers());
+                executor.submit(this::getActiveCustomers);
 
         try {
             Collection<Others.Customer> customers = customersFuture.get();
             Collection<Others.Item> items = iFuture.get();
             return combineResults(items, customers);
-        } catch (ExecutionException | InterruptedException ex) {}
+        } catch (ExecutionException | InterruptedException ex) {
+        }
 
         return new Others.Report();
     }

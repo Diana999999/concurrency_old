@@ -12,7 +12,7 @@ public class ReportServiceCF {
 
     private ExecutorService executor = ForkJoinPool.commonPool();
 
-    private LoadGenerator loadGenerator = new LoadGenerator();
+    private LoadGenerator loadGenerator = new LoadGenerator(true);
 
     public Others.Report getReport() {
         CompletableFuture<Collection<Others.Item>> itemsCF =
