@@ -7,7 +7,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public class PriceAggregator {
 
@@ -27,16 +28,11 @@ public class PriceAggregator {
         ExecutorService executor = Executors.newCachedThreadPool();
         return shopIds.stream().map(
                         shopId -> CompletableFuture.supplyAsync(
-                                        () -> priceRetriever.getPrice(itemId, shopId), executor
+                                        () -> priceRetriever.getPrice(itemId, shopId),executor
                                 ).completeOnTimeout(null, 2950, TimeUnit.MILLISECONDS)
-                                .handle((result, ex) -> {
-                                    if (ex != null) {
-                                        return null;
-                                    } else {
-                                        return result;
-                                    }
-                                })
-                ).collect(Collectors.toList())
+                                .exceptionally(ex -> null)
+                )
+                .collect(toList())
                 .stream()
                 .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
