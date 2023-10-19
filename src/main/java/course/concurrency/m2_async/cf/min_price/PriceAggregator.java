@@ -36,7 +36,8 @@ public class PriceAggregator {
                                         return result;
                                     }
                                 })
-                ).collect(Collectors.toList()).stream()
+                ).collect(Collectors.toList())
+                .stream()
                 .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
                 .min(Double::compareTo)
