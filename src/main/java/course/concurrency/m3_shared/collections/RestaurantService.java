@@ -13,7 +13,11 @@ public class RestaurantService {
         put("C", new Restaurant("C"));
     }};
 
-    private Object stat;
+    private ConcurrentHashMap<String, Integer> stat = new ConcurrentHashMap<>() {{
+        put("A", 0);
+        put("B", 0);
+        put("C", 0);
+    }};
 
     public Restaurant getByName(String restaurantName) {
         addToStat(restaurantName);
@@ -21,11 +25,17 @@ public class RestaurantService {
     }
 
     public void addToStat(String restaurantName) {
-        // your code
+        stat.computeIfPresent(restaurantName, (key, value) -> {
+            value += 1;
+            return value;
+        });
     }
 
     public Set<String> printStat() {
-        // your code
-        return new HashSet<>();
+        HashSet<String> strings = new HashSet<>();
+        strings.add("A - " + stat.get("A"));
+        strings.add("B - " + stat.get("B"));
+        strings.add("C - " + stat.get("C"));
+        return strings;
     }
 }
