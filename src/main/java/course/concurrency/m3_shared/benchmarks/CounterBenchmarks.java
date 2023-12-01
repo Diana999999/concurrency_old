@@ -18,8 +18,8 @@ import java.util.concurrent.locks.*;
 public class CounterBenchmarks {
 
     // Change WRITERS and READERS to experiment
-    public static final int WRITERS = 7;
-    public static final int READERS = 1;
+    public static final int WRITERS = 2;
+    public static final int READERS = 2;
 
     private final AtomicLong atomicLongCounter = new AtomicLong();
     private final LongAdder longAdderCounter = new LongAdder();
@@ -360,6 +360,6 @@ public class CounterBenchmarks {
     @Group("Atomic_accumulate")
     @GroupThreads(WRITERS)
     public long updateAtomicMethods() {
-        return atomic.accumulateAndGet(newValue, (x1, x2) -> x1 + x2);
+        return atomic.accumulateAndGet(newValue, Long::sum);
     }
 }
