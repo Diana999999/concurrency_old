@@ -22,12 +22,13 @@ public class PriceAggregator {
     public double getMinPrice(long itemId) {
         return Arrays.stream(shopIds.stream()
                 .map(shopId -> CompletableFuture
-                        .supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), Executors.newFixedThreadPool(8))
+                        .supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), Executors.newSingleThreadExecutor())
                         .orTimeout( 2900, TimeUnit.MILLISECONDS)
                         .exceptionally(e -> Double.NaN))
                 .toArray(CompletableFuture[]::new))
-                .peek(CompletableFuture::join)
-                .map(completableFuture -> Double.valueOf(completableFuture.getNow(Double.NaN).toString()))
+                .map(CompletableFuture::join)
+                        .map(String::valueOf)
+                        .map(Double::valueOf)
                 .min(Double::compareTo).orElse(Double.NaN);
     }
 }
