@@ -19,10 +19,12 @@ public class PriceAggregator {
         this.shopIds = shopIds;
     }
 
+    private ExecutorService executorService = Executors.newCachedThreadPool();
+
     public double getMinPrice(long itemId) {
         return Arrays.stream(shopIds.stream()
                 .map(shopId -> CompletableFuture
-                        .supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), Executors.newSingleThreadExecutor())
+                        .supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), executorService)
                         .orTimeout( 2900, TimeUnit.MILLISECONDS)
                         .exceptionally(e -> Double.NaN))
                 .toArray(CompletableFuture[]::new))
